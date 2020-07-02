@@ -28,4 +28,3 @@ class Point implements Cloneable
 		this.y = y;
 	}	
 }
-

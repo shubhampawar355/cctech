@@ -1,4 +1,3 @@
-
 public class Graph {
 
 	 private Block[] blocks;
@@ -160,20 +159,25 @@ public class Graph {
 	}
 
 	private double getMin(double[] value) {
-		double res=Double. MAX_VALUE;
-		for(int i=0;i<value.length;i++)
-			if(value[i]<res && value[i]>0)
+		double res=0;
+		if(value.length==1)
+			return value[0];
+		for(int i=0;i<value.length-1;i++) {
+			if(value[i]<=value[i+1])
 				res=value[i];
+			else
+				res=value[i+1];
+		}
 		return res;
 	}
 	
-	public double calSurface()
+	public double calSurface() throws CloneNotSupportedException
 	{
 		double surf=0.0;
 		double presurf=0.0;
 		int[] pos=calPosition(); //step 1
 		
-		for(int i=0;i<blocks.length;i++)
+		for(int i=0;i<blocks.length;i++)//step 2
 		{
 			Point lTop=new Point(blocks[i].minX,blocks[i].maxY);
 			Point lBase=new Point(blocks[i].minX,blocks[i].minY);
@@ -183,7 +187,7 @@ public class Graph {
 			if(pos[i]==1)
 			{
 				if(i==0)
-					surf=blocks[i].maxY;
+					surf=surf+blocks[i].maxY;
 				else
 				{
 					if(sun.x>blocks[i-1].maxX)
@@ -191,19 +195,24 @@ public class Graph {
 					else
 					{
 						double[] value=new double[i];
-
 						for(int j=0;j<i;j++)
 						{
 							Point cp=getGP(pos[j], blocks[j]);
 							if(pos[j]==3)
-								cp=new Point(blocks[j].maxX,blocks[j].maxY);
+							{
+								if(blocks[j].maxX==sun.x)
+									cp=lBase.clone();
+								else
+									cp=new Point(blocks[j].maxX,blocks[j].maxY);
+							}
+							
 							Point ip=lineSegmentIntersection(sun,cp,lTop,lBase);
 							if(ip!=null) 
 								value[j]=getDistance(ip, lTop);
-
+							System.out.println("value["+j+"]="+value[j]);
 						}
-						if(getMin(value)!=Double.MAX_VALUE)
-							surf=surf+getMin(value);
+						surf=surf+getMin(value);
+
 					}
 					
 				}
@@ -211,7 +220,7 @@ public class Graph {
 			else if(pos[i]==2)
 			{
 				if(i==0)
-					surf=blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+					surf=surf+blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
 				else
 				{
 					if(sun.x>blocks[i-1].maxX)
@@ -219,22 +228,21 @@ public class Graph {
 					else
 					{
 						double[] value=new double[i];
-						double bound=Double.MIN_VALUE;
-						int boundIndex=0;
 						for(int j=0;j<i;j++)
 						{
 							Point cp=getGP(pos[j], blocks[j]);
-							if(pos[j]==3)
-								cp=new Point(blocks[j].maxX,blocks[j].maxY);
-							if(sun.x==blocks[i-1].maxX)
-								cp=new Point(blocks[i].minX,blocks[i].minY);
-							if(bound<blocks[j].maxY) {
-								bound=blocks[j].maxY;
-								boundIndex=j;
+							if(pos[j]==3) {
+								if(blocks[j].maxX==sun.x)
+									cp=lBase.clone();
+								else
+									cp=new Point(blocks[j].maxX,blocks[j].maxY);
 							}
 							Point ip=lineSegmentIntersection(sun,cp,lTop,lBase);
-							if(ip!=null) { 
-								if(ip.y<0)
+							if(ip!=null) { //special condition block for 2
+								System.out.println("ip("+ip.x+","+ip.y+")");
+								if(ip.x==lTop.x && ip.y==lTop.y)
+									value[j]=getDistance(lTop, rTop);
+								else if(ip.y<0)
 									value[j]=blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
 								else
 									value[j]=getDistance(ip, lTop)+blocks[i].maxX-blocks[i].minX;
@@ -242,12 +250,13 @@ public class Graph {
 							else
 							{
 								ip=lineSegmentIntersection(sun,cp,lTop,rTop);
-								if(ip!=null) {
+								if(ip!=null)
 									value[j]=getDistance(ip, rTop);
-								}
-							}							
+							}	
+							System.out.println("value["+j+"]="+value[j]);
+
 						}
-							surf=surf+value[boundIndex];
+						surf=surf+getMin(value);
 					}
 				}
 
@@ -264,44 +273,39 @@ public class Graph {
 					if(sun.x<blocks[i+1].minX)
 						surf=surf+blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
 					else
-					{
-						double[] value=new double[blocks.length];
-						double bound=Double.MIN_VALUE;
-						int boundIndex=0;
-						
+					{			
+						double[] value=new double[blocks.length-1-i];
+						int count=0;
 						for(int j=blocks.length-1;j>i;j--)
 						{
 							Point cp=getGP(pos[j], blocks[j]);
-							if(pos[j]==3)
-								cp=new Point(blocks[j].minX,blocks[j].maxY);
-							if(sun.x==blocks[i+1].minX)
-								cp=new Point(blocks[i].maxX,blocks[i].minY);
-
-							if(bound<blocks[j].maxY) {
-								bound=blocks[j].maxY;
-								boundIndex=j;
+							if(pos[j]==3) {
+								if(blocks[j].minX==sun.x)
+									cp=rBase.clone();
+								else
+									cp=new Point(blocks[j].minX,blocks[j].maxY);
 							}
-
 							Point ip=lineSegmentIntersection(sun,cp,rTop,rBase);
 							if(ip!=null) {
-								if(ip.y<0)
-									value[j]=blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+								if(ip.x==rTop.x && ip.y==rTop.y)
+									value[count]=getDistance(lTop, rTop);
+								else if(ip.y<0)
+									value[count]=blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
 								else
-									value[j]=getDistance(ip, rTop)+blocks[i].maxX-blocks[i].minX;
+									value[count]=getDistance(ip, rTop)+blocks[i].maxX-blocks[i].minX;
 							}
 							else
 							{
 								ip=lineSegmentIntersection(sun,cp,lTop,rTop);
 								if(ip!=null)
-									value[j]=getDistance(ip, lTop);
+									value[count]=getDistance(ip, lTop);
 							}
-							System.out.println("j="+j+" value[j]= "+value[j]);
+							System.out.println("j="+j+" value[j]= "+value[count]);
+							++count;
 						}
-							surf=surf+value[boundIndex];
-						
+						surf=surf+getMin(value);
 					}
 				}
-
 			}
 			else
 			{
@@ -313,18 +317,24 @@ public class Graph {
 						surf=surf+blocks[i].maxY;
 					else
 					{
-						double[] value=new double[blocks.length];
-
+						double[] value=new double[blocks.length-i-1];
+						int count=0;
 						for(int j=blocks.length-1;j>i;j--)
 						{
 							Point cp=getGP(pos[j], blocks[j]);
+							if(pos[j]==3)
+							{
+								if(blocks[j].minX==sun.x)
+									cp=rBase.clone();
+								else
+									cp=new Point(blocks[j].minX,blocks[j].maxY);
+							}
 							Point ip=lineSegmentIntersection(sun,cp,rTop,rBase);
 							if(ip!=null) 
-								value[j]=getDistance(ip, rTop);
-						}
-						if(getMin(value)!=Double.MAX_VALUE)
-							surf=surf+getMin(value);
-	
+								value[count]=getDistance(ip, rTop);
+							++count;
+							}
+						surf=surf+getMin(value);
 					}
 				}
 			}
@@ -335,4 +345,3 @@ public class Graph {
 
 	
 }
-
