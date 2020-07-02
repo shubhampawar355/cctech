@@ -1,8 +1,14 @@
-class Point{
+class Point implements Cloneable
+{
 	double x;
 	double y;
 
 	public Point() {}
+    
+	@Override
+	protected Point clone() throws CloneNotSupportedException {
+		return new Point(x,y);
+	}
 
 	public Point(double x, double y) {
 		super();
@@ -22,3 +28,4 @@ class Point{
 		this.y = y;
 	}	
 }
+

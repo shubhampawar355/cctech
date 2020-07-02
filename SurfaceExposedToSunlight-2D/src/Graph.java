@@ -1,17 +1,20 @@
 
 public class Graph {
 
-	 Block[] blocks;
-	 Point sun;
-	 Double dispX,dispY;// displacement X & Y for whole graph
+	 private Block[] blocks;
+	 private Point sun;
+	 private Double dispX,dispY;// displacement X & Y for whole graph
 
 
-	Graph(){}
-
-	Graph(Block[] arr,Point sun){
-		this.sun=sun;
+	Graph(){
+		this.sun=new Point();
 		dispX=0.0;
 		dispY=0.0;
+	}
+
+	Graph(Block[] arr,Point sun) throws CloneNotSupportedException{
+		this();
+		this.sun=sun.clone();
 		if(sun.x<dispX)
 			dispX=Math.abs(sun.x);
 		if(sun.y<dispY)
@@ -24,28 +27,48 @@ public class Graph {
 			if(dispY<arr[i].dispY)
 				dispY=arr[i].dispY;
 		}
-
-		blocks=arr;
+		
+		this.blocks=new Block[arr.length];
+		for(int i=0;i<arr.length;i++)
+		{
+			this.blocks[i]=arr[i].clone();
+		}
+		this.adjustGraph();
+		this.sortBlocks();
 	}
 	
-	void adjustGraph()	{
-		sun.x=sun.x+this.dispX;
-		sun.y=sun.y+this.dispY;
-		for(int i=0;i<blocks.length;i++)
-		{
-			Point[] arr=blocks[i].getPoints();
-			for(int j=0;j<4;j++)
-			{
-				arr[j].x=arr[j].x+this.dispX;
-				arr[j].y=arr[j].y+this.dispY;
-			}
-			blocks[i].calculate(arr);
-		}
-		this.dispX=0.0;
-		this.dispY=0.0;
+	void changeSun(Point p) throws CloneNotSupportedException
+	{
+		p.x=p.x+this.dispX;
+		p.y=p.y+this.dispY;
+		this.sun=p.clone();
+		if(p.x<0)
+			this.dispX=Math.abs(p.x);
+		if(p.y<0)
+			this.dispY=Math.abs(p.y);
+		if(p.x<0 || p.y<0)
+			adjustGraph();	
 	}
 
-	void sortBlocks()	{
+	private void adjustGraph()	{
+		if(dispX!=0 || dispY!=0)
+		{
+			sun.x=sun.x+this.dispX;
+			sun.y=sun.y+this.dispY;
+			for(int i=0;i<blocks.length;i++)
+			{
+				Point[] arr=blocks[i].getPoints();
+				for(int j=0;j<4;j++)
+				{
+					arr[j].x=arr[j].x+this.dispX;
+					arr[j].y=arr[j].y+this.dispY;
+				}
+				blocks[i].calculate(arr);
+			}
+		}
+	}
+
+	private void sortBlocks()	{
 		for(int i=0;i<blocks.length;i++)
 		{
 			for(int j=0;j<blocks.length;j++)
@@ -70,7 +93,7 @@ public class Graph {
 		System.out.println("Sun("+sun.x+","+sun.y+")\ndispX="+dispX+" dispY="+dispY);
 	}
 
-	static Point lineSegmentIntersection(Point sun, Point gp, Point start, Point end) 	{ 
+	private Point lineSegmentIntersection(Point sun, Point gp, Point start, Point end) 	{ 
 		// Line AB represented as a1x + b1y = c1 
 		double a1 = gp.y - sun.y; 
 		double b1 = sun.x - gp.x; 
@@ -96,11 +119,11 @@ public class Graph {
 		} 
 	}
 
-	public double getDistance(Point p1,Point p2) {
+	private double getDistance(Point p1,Point p2) {
 		return Math.sqrt(Math.pow(Math.abs(p2.getX()-p1.getX()), 2)+Math.pow(Math.abs(p2.getY()-p1.getY()), 2));
 	}
 
-	public Point getGP(int i,Block b)
+	private Point getGP(int i,Block b)
 	{
 		Point p=new Point();
 		if(i==1 || i==4)
@@ -110,7 +133,7 @@ public class Graph {
 		return p;
 	}
 
-	public int[] calPosition()
+	private int[] calPosition()
 	{
 		int[] pos=new int[blocks.length];
 
@@ -148,9 +171,6 @@ public class Graph {
 	{
 		double surf=0.0;
 		double presurf=0.0;
-
-		this.adjustGraph();
-		this.sortBlocks();
 		int[] pos=calPosition(); //step 1
 		
 		for(int i=0;i<blocks.length;i++)
@@ -224,8 +244,6 @@ public class Graph {
 								ip=lineSegmentIntersection(sun,cp,lTop,rTop);
 								if(ip!=null) {
 									value[j]=getDistance(ip, rTop);
-									System.out.println("ip("+ip.getX()+","+ip.getY()+")");
-									System.out.println("rTop("+rTop.getX()+","+rTop.getY()+")");
 								}
 							}							
 						}
@@ -317,3 +335,4 @@ public class Graph {
 
 	
 }
+

@@ -1,5 +1,5 @@
 
-public class Block {
+public class Block implements Cloneable {
 	
 	double minX,maxY,minY,maxX,dispX,dispY;
 
@@ -7,6 +7,7 @@ public class Block {
 		dispX=0;
 		dispY=0;
 	}
+	
 	
 	Block(Point[] arr){
 
@@ -20,6 +21,17 @@ public class Block {
 		this.calculate(arr);
 	}
 	
+	@Override
+	protected Block clone() throws CloneNotSupportedException {
+		Block block=new Block();
+		block.minX=minX;
+		block.minY=minY;
+		block.maxX=maxX;
+		block.maxY=maxY;
+		block.dispY=dispY;
+		block.dispX=dispX;
+		return block;
+	}
 	public  void calculate(Point[] arr)
 	{
 		minX=Math.min(Math.min(arr[0].x, arr[1].x),Math.min(arr[2].x, arr[3].x));
@@ -48,3 +60,4 @@ public class Block {
 	}
 
 }
+
