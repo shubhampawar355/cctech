@@ -176,7 +176,6 @@ public class Graph {
 			presurf=surf;	
 			if(pos[i]==1)
 			{
-				System.out.println("in case 1");
 				if(i==0)
 					set.add(blocks[i].maxY);
 				else
@@ -192,7 +191,6 @@ public class Graph {
 								continue;
 							if(bound<blocks[j].maxY)
 								bound=blocks[j].maxY;
-							System.out.println("bound="+bound);
 							Point cp=getGP(pos[j], blocks[j]);
 							if(pos[j]==3)
 							{
@@ -220,7 +218,6 @@ public class Graph {
 			}
 			else if(pos[i]==2)
 			{
-				System.out.println("in case 2");
 				if(i==0)
 					set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 				else
@@ -245,7 +242,6 @@ public class Graph {
 							}
 							Point ip=lineSegmentIntersection(sun,cp,lTop,lBase);
 							if(ip!=null) { //special condition block for 2
-								System.out.println("ip("+ip.x+","+ip.y+")");
 								if(ip.x==lTop.x && ip.y==lTop.y)
 									set.add(getDistance(lTop, rTop));
 								else if(ip.y<0)
@@ -266,12 +262,10 @@ public class Graph {
 				}
 			}
 			else if(pos[i]==3) {
-				System.out.println("in case 3");
 				set.add(getDistance(lTop, rTop));
 			}
 			else if(pos[i]==4)
 			{
-				System.out.println("in case 4");
 				if(i==blocks.length-1)
 					set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 				else
@@ -317,7 +311,6 @@ public class Graph {
 			}
 			else
 			{
-				System.out.println("in case 5");
 				if(i==blocks.length-1)
 					set.add(blocks[i].maxY);
 				else
@@ -346,7 +339,6 @@ public class Graph {
 							if(bound>=blocks[j].maxY) {
 								if(ip!=null)
 								{
-									System.out.println("j="+j+" ip("+ip.x+","+ip.y+")");
 									if(ip.y<0)
 										set.add(getDistance(rBase, rTop));
 									else
