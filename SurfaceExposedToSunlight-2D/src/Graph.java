@@ -1,8 +1,10 @@
+import java.util.TreeSet;
+
 public class Graph {
 
-	 private Block[] blocks;
-	 private Point sun;
-	 private Double dispX,dispY;// displacement X & Y for whole graph
+	private Block[] blocks;
+	private Point sun;
+	private Double dispX,dispY;// displacement X & Y for whole graph
 
 
 	Graph(){
@@ -26,7 +28,7 @@ public class Graph {
 			if(dispY<arr[i].dispY)
 				dispY=arr[i].dispY;
 		}
-		
+
 		this.blocks=new Block[arr.length];
 		for(int i=0;i<arr.length;i++)
 		{
@@ -35,7 +37,7 @@ public class Graph {
 		this.adjustGraph();
 		this.sortBlocks();
 	}
-	
+
 	void changeSun(Point p) throws CloneNotSupportedException
 	{
 		p.x=p.x+this.dispX;
@@ -114,8 +116,7 @@ public class Graph {
 			if(ip.x<=Math.max(start.x, end.x) && ip.x>=Math.min(start.x, end.x) && ip.y<=Math.max(start.y, end.y) ) 
 				return ip;
 			else
-				return null;
-		} 
+				return null;		} 
 	}
 
 	private double getDistance(Point p1,Point p2) {
@@ -138,65 +139,60 @@ public class Graph {
 
 		for(int i=0;i<blocks.length;i++)
 		{
-			if(sun.x<blocks[i].minX)
+			if(sun.x<blocks[i].minX)//left
 			{
-				if(sun.y<=blocks[i].maxY)
+				if(sun.y<=blocks[i].maxY)//left-bottom 
 					pos[i]=1;
-				else
+				else					//left-up
 					pos[i]=2;
 			}
-			else if(sun.x>blocks[i].maxX)
+			else if(sun.x>blocks[i].maxX)//right
 			{
-				if(sun.y<=blocks[i].maxY)
+				if(sun.y<=blocks[i].maxY)//right-bottom
 					pos[i]=5;
-				else
+				else					//right-up
 					pos[i]=4;
 			}
-			else 
+			else 						// upside
 				pos[i]=3;
 		}
 		return pos;
 	}
 
-	private double getMin(double[] value) {
-		double res=0;
-		if(value.length==1)
-			return value[0];
-		for(int i=0;i<value.length-1;i++) {
-			if(value[i]<=value[i+1])
-				res=value[i];
-			else
-				res=value[i+1];
-		}
-		return res;
-	}
-	
+
 	public double calSurface() throws CloneNotSupportedException
 	{
 		double surf=0.0;
 		double presurf=0.0;
 		int[] pos=calPosition(); //step 1
-		
 		for(int i=0;i<blocks.length;i++)//step 2
 		{
 			Point lTop=new Point(blocks[i].minX,blocks[i].maxY);
 			Point lBase=new Point(blocks[i].minX,blocks[i].minY);
 			Point rTop=new Point(blocks[i].maxX,blocks[i].maxY);
 			Point rBase=new Point(blocks[i].maxX,blocks[i].minY);
+			TreeSet<Double> set=new TreeSet<Double>();
+
 			presurf=surf;	
 			if(pos[i]==1)
 			{
+				System.out.println("in case 1");
 				if(i==0)
-					surf=surf+blocks[i].maxY;
+					set.add(blocks[i].maxY);
 				else
 				{
 					if(sun.x>blocks[i-1].maxX)
-						surf=surf+blocks[i].maxY;
+						set.add(blocks[i].maxY);
 					else
 					{
-						double[] value=new double[i];
+						double bound=0;
 						for(int j=0;j<i;j++)
-						{
+						{	
+							if(sun.x>blocks[j].maxX)
+								continue;
+							if(bound<blocks[j].maxY)
+								bound=blocks[j].maxY;
+							System.out.println("bound="+bound);
 							Point cp=getGP(pos[j], blocks[j]);
 							if(pos[j]==3)
 							{
@@ -205,31 +201,41 @@ public class Graph {
 								else
 									cp=new Point(blocks[j].maxX,blocks[j].maxY);
 							}
-							
 							Point ip=lineSegmentIntersection(sun,cp,lTop,lBase);
-							if(ip!=null) 
-								value[j]=getDistance(ip, lTop);
-							System.out.println("value["+j+"]="+value[j]);
+							if(bound>=blocks[j].maxY)
+							{
+								if(ip!=null)
+								{
+									if(ip.y<0)
+										set.add(getDistance(lBase, lTop));
+									else
+										set.add(getDistance(ip, lTop));
+								}									
+							}
+							if(ip==null && bound==blocks[j].maxY)
+								set.add(0.0);
 						}
-						surf=surf+getMin(value);
-
 					}
-					
 				}
 			}
 			else if(pos[i]==2)
 			{
+				System.out.println("in case 2");
 				if(i==0)
-					surf=surf+blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+					set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 				else
 				{
 					if(sun.x>blocks[i-1].maxX)
-						surf=surf+blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+						set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 					else
 					{
-						double[] value=new double[i];
+						double bound=0;
 						for(int j=0;j<i;j++)
 						{
+							if(sun.x>blocks[j].maxX)
+								continue;
+							if(bound<blocks[j].maxY)
+								bound=blocks[j].maxY;
 							Point cp=getGP(pos[j], blocks[j]);
 							if(pos[j]==3) {
 								if(blocks[j].maxX==sun.x)
@@ -241,43 +247,46 @@ public class Graph {
 							if(ip!=null) { //special condition block for 2
 								System.out.println("ip("+ip.x+","+ip.y+")");
 								if(ip.x==lTop.x && ip.y==lTop.y)
-									value[j]=getDistance(lTop, rTop);
+									set.add(getDistance(lTop, rTop));
 								else if(ip.y<0)
-									value[j]=blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
-								else
-									value[j]=getDistance(ip, lTop)+blocks[i].maxX-blocks[i].minX;
+									set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
+								else if(ip.y<blocks[i].maxY)
+									set.add(getDistance(ip,lTop)+blocks[i].maxX-blocks[i].minX);
 							}
 							else
 							{
 								ip=lineSegmentIntersection(sun,cp,lTop,rTop);
 								if(ip!=null)
-									value[j]=getDistance(ip, rTop);
-							}	
-							System.out.println("value["+j+"]="+value[j]);
-
+									set.add(getDistance(ip, rTop));
+							}
+							if(ip==null && bound==blocks[j].maxY)
+								set.add(0.0);
 						}
-						surf=surf+getMin(value);
 					}
 				}
-
 			}
-			else if(pos[i]==3)
-				surf=surf+getDistance(lTop, rTop);
-			
+			else if(pos[i]==3) {
+				System.out.println("in case 3");
+				set.add(getDistance(lTop, rTop));
+			}
 			else if(pos[i]==4)
 			{
+				System.out.println("in case 4");
 				if(i==blocks.length-1)
-					surf=surf+blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+					set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 				else
 				{
 					if(sun.x<blocks[i+1].minX)
-						surf=surf+blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+						set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 					else
 					{			
-						double[] value=new double[blocks.length-1-i];
-						int count=0;
+						double bound=0;
 						for(int j=blocks.length-1;j>i;j--)
 						{
+							if(sun.x<blocks[j].minX)
+								continue;
+							if(bound<blocks[j].maxY)
+								bound=blocks[j].maxY;
 							Point cp=getGP(pos[j], blocks[j]);
 							if(pos[j]==3) {
 								if(blocks[j].minX==sun.x)
@@ -288,39 +297,42 @@ public class Graph {
 							Point ip=lineSegmentIntersection(sun,cp,rTop,rBase);
 							if(ip!=null) {
 								if(ip.x==rTop.x && ip.y==rTop.y)
-									value[count]=getDistance(lTop, rTop);
+									set.add(getDistance(lTop, rTop));
 								else if(ip.y<0)
-									value[count]=blocks[i].maxY+blocks[i].maxX-blocks[i].minX;
+									set.add(blocks[i].maxY+blocks[i].maxX-blocks[i].minX);
 								else
-									value[count]=getDistance(ip, rTop)+blocks[i].maxX-blocks[i].minX;
+									set.add(getDistance(ip, rTop)+blocks[i].maxX-blocks[i].minX);
 							}
 							else
 							{
 								ip=lineSegmentIntersection(sun,cp,lTop,rTop);
 								if(ip!=null)
-									value[count]=getDistance(ip, lTop);
+									set.add(getDistance(ip, lTop));
 							}
-							System.out.println("j="+j+" value[j]= "+value[count]);
-							++count;
+							if(ip==null && bound==blocks[j].maxY)
+								set.add(0.0);
 						}
-						surf=surf+getMin(value);
 					}
 				}
 			}
 			else
 			{
+				System.out.println("in case 5");
 				if(i==blocks.length-1)
-					surf=surf+blocks[i].maxY;
+					set.add(blocks[i].maxY);
 				else
 				{
 					if(sun.x<blocks[i+1].minX)
-						surf=surf+blocks[i].maxY;
+						set.add(blocks[i].maxY);
 					else
 					{
-						double[] value=new double[blocks.length-i-1];
-						int count=0;
+						double bound=0;
 						for(int j=blocks.length-1;j>i;j--)
 						{
+							if(sun.x<blocks[j].minX)
+								continue;
+							if(bound<blocks[j].maxY)
+								bound=blocks[j].maxY;
 							Point cp=getGP(pos[j], blocks[j]);
 							if(pos[j]==3)
 							{
@@ -330,18 +342,27 @@ public class Graph {
 									cp=new Point(blocks[j].minX,blocks[j].maxY);
 							}
 							Point ip=lineSegmentIntersection(sun,cp,rTop,rBase);
-							if(ip!=null) 
-								value[count]=getDistance(ip, rTop);
-							++count;
+						
+							if(bound>=blocks[j].maxY) {
+								if(ip!=null)
+								{
+									System.out.println("j="+j+" ip("+ip.x+","+ip.y+")");
+									if(ip.y<0)
+										set.add(getDistance(rBase, rTop));
+									else
+										set.add(getDistance(ip, rTop));
+								}
 							}
-						surf=surf+getMin(value);
+							if(ip==null && bound==blocks[j].maxY)
+								set.add(0.0);
+						}
 					}
 				}
 			}
+			if(!set.isEmpty())
+				surf=surf+set.first();
 			System.out.println("Surface for  block "+i+"="+(surf-presurf));
 		}
 		return surf;
 	}
-
-	
 }
